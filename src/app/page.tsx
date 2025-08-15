@@ -13,7 +13,7 @@ type SimulationResult = {
 
 export default function App() {
   const [input, setInput] = useState(""); // comma or space-separated
-  const [iterations, setIterations] = useState(100);
+  const [iterations, setIterations] = useState(5000);
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState(false);
 
