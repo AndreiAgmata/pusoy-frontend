@@ -1,103 +1,121 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
 
-export default function Home() {
+type SimulationResult = {
+  iterations: number;
+  winRate: number;
+  bestArrangement: string[];
+  front: string[];
+  middle: string[];
+  back: string[];
+  autoWin?: string;
+};
+
+export default function App() {
+  const [input, setInput] = useState(""); // comma or space-separated
+  const [iterations, setIterations] = useState(100);
+  const [result, setResult] = useState<SimulationResult | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSimulate = async () => {
+    setLoading(true);
+    try {
+      const cards = input
+        .split(/[\s,]+/)
+        .map((c) => c.trim().toUpperCase())
+        .filter((c) => c.length > 0);
+
+      if (cards.length !== 13) {
+        alert("Please enter exactly 13 cards");
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch("http://localhost:4000/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ myCards: cards, iterations }),
+      });
+
+      if (!res.ok) throw new Error("Simulation failed");
+
+      const data = await res.json();
+      setResult(data);
+    } catch (err) {
+      console.error(err);
+      alert("Simulation failed. Check console for details.");
+    }
+    setLoading(false);
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "0.5rem",
+    marginBottom: "0.5rem",
+    border: "1px solid white",
+    borderRadius: "4px",
+    backgroundColor: "#222",
+    color: "white",
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+      <h1>Chinese Poker Monte Carlo Simulator</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <input
+        type="text"
+        value={input}
+        placeholder="Enter 13 cards, e.g. Ah Kh Qh Jh 10h 9h 8h 7h 6h 5h 4h 3h 2h"
+        onChange={(e) => setInput(e.target.value)}
+        style={inputStyle}
+      />
+
+      <input
+        type="number"
+        value={iterations}
+        onChange={(e) => setIterations(Number(e.target.value))}
+        placeholder="Number of dealer simulations"
+        style={inputStyle}
+      />
+
+      <button
+        onClick={handleSimulate}
+        disabled={loading}
+        style={{
+          padding: "0.5rem 1rem",
+          backgroundColor: "#444",
+          color: "white",
+          border: "1px solid white",
+          borderRadius: "4px",
+          cursor: "pointer",
+        }}
+      >
+        {loading ? "Simulating..." : "Run Simulation"}
+      </button>
+
+      {result && (
+        <div style={{ marginTop: "1rem" }}>
+          {result.autoWin && (
+            <p>
+              <strong>Auto-win hand:</strong> {result.autoWin}
+            </p>
+          )}
+          <p>
+            <strong>Win rate:</strong> {(result.winRate * 100).toFixed(2)}%
+          </p>
+          <div>
+            <p>
+              <strong>Front (3 cards):</strong> {result.front.join(" ")}
+            </p>
+            <p>
+              <strong>Middle (5 cards):</strong> {result.middle.join(" ")}
+            </p>
+            <p>
+              <strong>Back (5 cards):</strong> {result.back.join(" ")}
+            </p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
     </div>
   );
 }
