@@ -31,7 +31,7 @@ export default function App() {
         return;
       }
 
-      const res = await fetch("http://localhost:4000/simulate", {
+      const res = await fetch("https://pusoy-backend-1.onrender.com/simulate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ myCards: cards, iterations }),
